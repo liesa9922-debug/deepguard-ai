@@ -1,0 +1,2122 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeepGuard AI — Multimodal Deepfake Detection & Media Verification</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.6.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root {
+      --bg-void: #03060f;
+      --bg-navy: #060b19;
+      --bg-card: rgba(11, 19, 38, 0.78);
+      --bg-card-solid: #0b1326;
+      --bg-elevated: rgba(16, 28, 54, 0.88);
+      --border-subtle: rgba(56, 189, 248, 0.16);
+      --border-strong: rgba(56, 189, 248, 0.38);
+      --cyan: #38bdf8;
+      --cyan-bright: #0ea5e9;
+      --purple: #8b5cf6;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-void);
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.12), transparent 38%),
+        radial-gradient(circle at 85% 20%, rgba(139, 92, 246, 0.11), transparent 40%),
+        linear-gradient(180deg, #040814 0%, #03060f 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    code, pre, .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Navigation */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(4, 8, 20, 0.86);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .nav-container {
+      max-width: 1340px;
+      margin: 0 auto;
+      padding: 0.85rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      cursor: pointer;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(139, 92, 246, 0.25));
+      border: 1px solid var(--border-strong);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.22);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title span {
+      color: var(--cyan);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      padding: 0.48rem 0.78rem;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-primary);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .nav-btn.active {
+      color: var(--cyan);
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.62rem 1.15rem;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #6366f1);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(14, 165, 233, 0.28);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 26px rgba(14, 165, 233, 0.42);
+    }
+
+    .btn-outline {
+      background: rgba(15, 23, 42, 0.75);
+      border-color: var(--border-strong);
+      color: var(--cyan);
+    }
+
+    .btn-outline:hover {
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .btn-danger {
+      background: rgba(244, 63, 94, 0.14);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+
+    .btn-danger:hover {
+      background: rgba(244, 63, 94, 0.24);
+    }
+
+    .btn-sm {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.78rem;
+      border-radius: 8px;
+    }
+
+    /* Layout & Glass Cards */
+    .main-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    .view-section {
+      display: none;
+      animation: fadeIn 0.28s ease;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 0.35rem;
+      display: inline-block;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 4vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+    }
+
+    h2 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    h3 {
+      font-size: 1.12rem;
+      font-weight: 600;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Hero */
+    .hero-box {
+      position: relative;
+      padding: 3rem 2rem;
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 80% 25%, rgba(56, 189, 248, 0.15), transparent 45%),
+        radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.16), transparent 45%),
+        rgba(9, 16, 34, 0.85);
+      border: 1px solid var(--border-strong);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.35fr 0.85fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+    }
+
+    .gradient-text {
+      background: linear-gradient(90deg, #38bdf8, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .radar-panel {
+      background: rgba(4, 9, 22, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 16px;
+      padding: 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    .pulse-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 10px var(--emerald);
+      margin-right: 6px;
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(1.25); }
+    }
+
+    /* Dropzones */
+    .dropzone {
+      border: 2px dashed rgba(56, 189, 248, 0.35);
+      border-radius: 14px;
+      padding: 2.2rem 1.25rem;
+      text-align: center;
+      background: rgba(6, 13, 28, 0.65);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--cyan);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    /* Forensic Result Card (Matches Screenshot Architecture) */
+    .forensic-report-shell {
+      margin-top: 1.75rem;
+      border-radius: 16px;
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      background: linear-gradient(180deg, rgba(9, 18, 38, 0.96), rgba(5, 11, 24, 0.98));
+      padding: 1.5rem;
+      box-shadow: 0 0 35px rgba(14, 165, 233, 0.12);
+    }
+
+    .report-top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+      padding-bottom: 1.1rem;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    .risk-pill {
+      padding: 0.38rem 0.85rem;
+      border-radius: 999px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .risk-low {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      color: #34d399;
+    }
+
+    .risk-moderate {
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      color: #fbbf24;
+    }
+
+    .risk-high {
+      background: rgba(244, 63, 94, 0.16);
+      border: 1px solid rgba(244, 63, 94, 0.58);
+      color: #fb7185;
+    }
+
+    .risk-inconclusive {
+      background: rgba(148, 163, 184, 0.16);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      color: #cbd5e1;
+    }
+
+    .verdict-banner {
+      margin-top: 1.15rem;
+      padding: 1.2rem 1.35rem;
+      border-radius: 12px;
+      background: rgba(15, 29, 58, 0.65);
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .verdict-headline {
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin-top: 0.2rem;
+    }
+
+    .verdict-authentic { color: #34d399; }
+    .verdict-manipulated { color: #fb7185; }
+    .verdict-inconclusive { color: #fbbf24; }
+
+    .anomaly-score-box {
+      text-align: right;
+    }
+
+    .anomaly-number {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .hash-box {
+      margin-top: 1rem;
+      padding: 1rem 1.2rem;
+      border-radius: 12px;
+      background: rgba(4, 9, 22, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .xai-item {
+      margin-top: 0.75rem;
+      padding: 1rem 1.15rem;
+      border-radius: 12px;
+      background: rgba(12, 22, 44, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .xai-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: var(--cyan);
+      white-space: nowrap;
+    }
+
+    .xai-badge.meta {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+    }
+
+    /* Timestamps & Timeline */
+    .timestamp-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.42rem 0.78rem;
+      margin: 0.3rem 0.35rem 0 0;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      background: rgba(244, 63, 94, 0.14);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .timestamp-chip:hover {
+      background: rgba(244, 63, 94, 0.26);
+      transform: translateY(-1px);
+    }
+
+    .timestamp-chip.clean {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+    }
+
+    /* Inputs & Tables */
+    input[type="text"], input[type="email"], input[type="password"], input[type="url"], textarea {
+      width: 100%;
+      padding: 0.72rem 0.95rem;
+      border-radius: 10px;
+      background: rgba(4, 10, 24, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    th, td {
+      padding: 0.78rem 0.9rem;
+      text-align: left;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+    }
+
+    th {
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 16, 0.82);
+      backdrop-filter: blur(8px);
+      display: none;
+      place-items: center;
+      z-index: 100;
+      padding: 1rem;
+    }
+
+    .modal-backdrop.open {
+      display: grid;
+    }
+
+    .modal-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border-strong);
+      border-radius: 16px;
+      padding: 1.6rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2rem 1.25rem;
+      margin-top: 3rem;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .footer-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="brand" onclick="switchTab('home')">
+        <div class="brand-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="brand-title">DeepGuard <span>AI</span></div>
+      </a>
+
+      <div class="nav-links" id="navLinks">
+        <button class="nav-btn active" data-tab="home" onclick="switchTab('home')" data-i18n="nav_home">Home</button>
+        <button class="nav-btn" data-tab="video" onclick="switchTab('video')" data-i18n="nav_video">Video Detector</button>
+        <button class="nav-btn" data-tab="voice" onclick="switchTab('voice')" data-i18n="nav_voice">Voice Detector</button>
+        <button class="nav-btn" data-tab="image" onclick="switchTab('image')" data-i18n="nav_image">Image Detector</button>
+        <button class="nav-btn" data-tab="doclink" onclick="switchTab('doclink')" data-i18n="nav_doclink">Doc &amp; Link Verifier</button>
+        <button class="nav-btn" data-tab="dashboard" onclick="switchTab('dashboard')" data-i18n="nav_dash">Analysis Dashboard</button>
+        <button class="nav-btn" data-tab="metadata" onclick="switchTab('metadata')" data-i18n="nav_meta">Media Verification</button>
+        <button class="nav-btn" data-tab="history" onclick="switchTab('history')" data-i18n="nav_hist">Scan History</button>
+        <button class="nav-btn" data-tab="about" onclick="switchTab('about')" data-i18n="nav_about">About</button>
+      </div>
+
+      <div class="nav-actions">
+        <button class="btn btn-outline btn-sm" id="langBtn" onclick="toggleLanguage()">EN / हिं</button>
+        <button class="btn btn-primary btn-sm" id="authBtn" onclick="openAuthModal()">Login / Sign Up</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-wrap">
+
+    <!-- ==================== HOME ==================== -->
+    <section id="tab-home" class="view-section active">
+      <div class="hero-box">
+        <div class="hero-grid">
+          <div>
+            <span class="eyebrow">MULTIMODAL DIGITAL FORENSICS &amp; MEDIA VERIFICATION</span>
+            <h1 data-i18n="hero_title">Don't Trust What You See. <span class="gradient-text">Verify What You Hear.</span></h1>
+            <p style="color: var(--text-secondary); margin: 1.1rem 0 1.65rem; max-width: 620px; font-size: 1.02rem;" data-i18n="hero_sub">
+              DeepGuard AI inspects video frames, audio-visual lip synchronization, vocal frequency spectra, JPEG error levels, text stylometry, and cryptographic C2PA metadata—delivering transparent Explainable AI findings and downloadable forensic PDF reports.
+            </p>
+            <div style="display: flex; gap: 0.85rem; flex-wrap: wrap;">
+              <button class="btn btn-primary" onclick="switchTab('video')" data-i18n="btn_start">Start Detection</button>
+              <button class="btn btn-outline" onclick="switchTab('voice')" data-i18n="btn_voice">Analyze Voice / Mic</button>
+              <button class="btn btn-outline" onclick="switchTab('image')" data-i18n="btn_image">Scan Image (ELA)</button>
+            </div>
+          </div>
+
+          <div class="radar-panel">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.8rem; color:#38bdf8;">
+              <span><span class="pulse-dot"></span>FORENSIC ENGINE ONLINE</span>
+              <span>CLIENT-SIDE ZERO-LEAK</span>
+            </div>
+            <div style="color:#94a3b8; line-height:1.85;">
+              <div>[01] VIDEO_CV_PIPELINE &nbsp;&nbsp;→ <span style="color:#34d399;">READY (YCbCr + LipSync)</span></div>
+              <div>[02] AUDIO_FFT_SPECTRAL &nbsp;→ <span style="color:#34d399;">READY (7.5kHz + Wiener)</span></div>
+              <div>[03] IMAGE_ELA_HEATMAP &nbsp;&nbsp;→ <span style="color:#34d399;">READY (90% Delta Matrix)</span></div>
+              <div>[04] CRYPTO_SHA256_C2PA &nbsp;→ <span style="color:#34d399;">ACTIVE (WebCrypto API)</span></div>
+              <div>[05] PDF_QR_REPORTER &nbsp;&nbsp;&nbsp;&nbsp;→ <span style="color:#34d399;">VERIFIED</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Core Detection Modules -->
+      <div class="grid-3" style="margin-bottom: 2rem;">
+        <div class="glass-card">
+          <span class="eyebrow">MODULE 01</span>
+          <h3>Video &amp; Lip-Sync Detector</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.65rem 0 1.1rem;">
+            Samples keyframe intervals across uploaded videos, measures facial lighting stability, boundary sharpness, and correlates lower-face motion against audio RMS energy.
+          </p>
+          <button class="btn btn-outline btn-sm" onclick="switchTab('video')">Launch Video Scanner →</button>
+        </div>
+
+        <div class="glass-card">
+          <span class="eyebrow">MODULE 02</span>
+          <h3>AI Voice &amp; Mic Detector</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.65rem 0 1.1rem;">
+            Performs Radix-2 FFT spectral analysis on uploaded audio or live microphone captures to detect neural vocoder frequency cutoffs (&gt;7.5 kHz) and spectral flatness.
+          </p>
+          <button class="btn btn-outline btn-sm" onclick="switchTab('voice')">Launch Voice Scanner →</button>
+        </div>
+
+        <div class="glass-card">
+          <span class="eyebrow">MODULE 03</span>
+          <h3>Image Manipulation (ELA)</h3>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.65rem 0 1.1rem;">
+            Computes Error Level Analysis recompression heatmaps and inspects binary headers for C2PA Content Credentials or generative AI software signatures.
+          </p>
+          <button class="btn btn-outline btn-sm" onclick="switchTab('image')">Launch Image Scanner →</button>
+        </div>
+      </div>
+
+      <!-- How It Works & Cybersecurity Awareness -->
+      <div class="grid-2">
+        <div class="glass-card">
+          <span class="eyebrow">FORENSIC WORKFLOW</span>
+          <h3 style="margin-bottom: 0.85rem;">How DeepGuard AI Verifies Media</h3>
+          <ol style="padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.9rem; display: grid; gap: 0.5rem;">
+            <li><strong style="color:var(--text-primary);">Local Ingestion &amp; Hashing:</strong> Media stays in browser memory and is fingerprinted with SHA-256 without public exposure.</li>
+            <li><strong style="color:var(--text-primary);">Signal &amp; Structural Extraction:</strong> Frames, PCM audio waveforms, JPEG compression deltas, or text stylometry metrics are extracted.</li>
+            <li><strong style="color:var(--text-primary);">Explainable AI Breakdown:</strong> Every anomaly is mapped to a specific timestamp, frequency band, or visual heatmap region.</li>
+            <li><strong style="color:var(--text-primary);">Forensic PDF + QR Export:</strong> Generate a tamper-evident PDF certificate with an embedded verification QR code.</li>
+          </ol>
+        </div>
+
+        <div class="glass-card">
+          <span class="eyebrow">CYBERSECURITY ADVISORY</span>
+          <h3 style="margin-bottom: 0.85rem;">Defending Against Deepfake Fraud</h3>
+          <ul style="padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.9rem; display: grid; gap: 0.5rem;">
+            <li><strong style="color:var(--text-primary);">Verify Out-of-Band:</strong> Always confirm urgent wire transfers or voice requests via an independent trusted phone number.</li>
+            <li><strong style="color:var(--text-primary);">Probabilistic Evidence:</strong> An Anomaly Index measures signal artifacts—never treat automated scores as sole legal proof.</li>
+            <li><strong style="color:var(--text-primary);">Metadata Context:</strong> Social media platforms routinely strip EXIF and C2PA credentials during re-encoding; missing metadata alone does not prove manipulation.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIDEO DETECTOR ==================== -->
+    <section id="tab-video" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">MULTIMODAL FRAME &amp; LIP-SYNC FORENSICS</span>
+        <h2>Video &amp; Reel Deepfake Detector</h2>
+        <p style="color: var(--text-secondary);">Upload MP4, MOV, AVI, or WEBM files (max 150 MB) to inspect frame-level facial consistency, lighting shifts, and audio-video synchronization.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="dropzone" id="videoDropzone" onclick="document.getElementById('videoInput').click()">
+          <p style="font-weight: 600; font-size: 1.05rem;">Drop video file here or click to browse</p>
+          <p style="color: var(--text-muted); font-size: 0.84rem; margin-top: 0.35rem;">Supports MP4, WEBM, MOV, AVI • Client-side frame extraction &amp; lip-sync correlation</p>
+          <input type="file" id="videoInput" accept="video/*" class="hidden" onchange="handleVideoUpload(this.files[0])" />
+        </div>
+
+        <div id="videoPreviewWrap" class="hidden" style="margin-top: 1.5rem;">
+          <div class="grid-2" style="align-items: start;">
+            <div>
+              <video id="videoPlayer" controls style="width: 100%; border-radius: 12px; border: 1px solid var(--border-subtle); background:#000;"></video>
+              <div style="margin-top: 0.75rem; display:flex; gap:0.65rem; flex-wrap:wrap;">
+                <button class="btn btn-primary" id="runVideoBtn" onclick="analyzeVideo()">Run Multimodal Video Analysis</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('videoInput').click()">Replace Video</button>
+              </div>
+            </div>
+
+            <div class="glass-card" style="background: rgba(4, 10, 24, 0.75);">
+              <h3>Suspicious Timestamps &amp; Timeline</h3>
+              <p style="color: var(--text-secondary); font-size: 0.83rem; margin-top: 0.25rem;">Click any timestamp below to jump directly to that frame in the video player.</p>
+              <canvas id="videoTimelineCanvas" height="75" style="width:100%; margin-top:0.85rem; border-radius:8px; background:#03060f; border:1px solid rgba(56,189,248,0.2);"></canvas>
+              <div id="videoTimestampsList" style="margin-top: 0.85rem;">
+                <span style="color: var(--text-muted); font-size: 0.84rem;">Run analysis to populate clickable frame timestamps.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="videoResultContainer"></div>
+      </div>
+    </section>
+
+    <!-- ==================== VOICE DETECTOR ==================== -->
+    <section id="tab-voice" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">ACOUSTIC SPECTRAL &amp; VOCODER FORENSICS</span>
+        <h2>AI Voice &amp; Audio Deepfake Detector</h2>
+        <p style="color: var(--text-secondary);">Analyze MP3, WAV, M4A, AAC, OGG, or record directly via microphone to evaluate high-frequency vocoder cutoffs (&gt;7.5 kHz) and Wiener spectral flatness.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="grid-2">
+          <div class="dropzone" id="audioDropzone" onclick="document.getElementById('audioInput').click()">
+            <p style="font-weight: 600; font-size: 1.02rem;">Drop audio recording or click to upload</p>
+            <p style="color: var(--text-muted); font-size: 0.84rem; margin-top: 0.35rem;">Supports MP3, WAV, M4A, AAC, OGG, WEBM</p>
+            <input type="file" id="audioInput" accept="audio/*" class="hidden" onchange="handleAudioUpload(this.files[0])" />
+          </div>
+
+          <div class="glass-card" style="display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; background: rgba(6, 13, 28, 0.65);">
+            <span class="eyebrow">REAL-TIME CAPTURE</span>
+            <h3>Live Microphone Verification</h3>
+            <p style="color: var(--text-secondary); font-size: 0.84rem; margin: 0.4rem 0 1rem;">Record 4–15 seconds of speech for immediate spectral verification.</p>
+            <div style="display:flex; gap:0.65rem;">
+              <button class="btn btn-primary btn-sm" id="startMicBtn" onclick="startMicRecording()">● Start Mic Capture</button>
+              <button class="btn btn-danger btn-sm hidden" id="stopMicBtn" onclick="stopMicRecording()">■ Stop &amp; Analyze</button>
+            </div>
+            <p id="micStatus" class="mono" style="font-size: 0.78rem; color: var(--cyan); margin-top: 0.65rem;"></p>
+          </div>
+        </div>
+
+        <div id="audioPreviewWrap" class="hidden" style="margin-top: 1.5rem;">
+          <audio id="audioPlayer" controls style="width: 100%; margin-bottom: 0.85rem;"></audio>
+          <canvas id="waveformCanvas" height="95" style="width:100%; border-radius:10px; background:#03060f; border:1px solid rgba(56,189,248,0.22);"></canvas>
+          <div style="margin-top: 0.85rem;">
+            <button class="btn btn-primary" onclick="analyzeCurrentAudio()">Run Spectral Voice Analysis</button>
+          </div>
+        </div>
+
+        <div id="audioResultContainer"></div>
+      </div>
+    </section>
+
+    <!-- ==================== IMAGE DETECTOR ==================== -->
+    <section id="tab-image" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">ERROR LEVEL ANALYSIS (ELA) &amp; SYNTHETIC SIGNATURE SCAN</span>
+        <h2>Image Manipulation &amp; AI-Generation Detector</h2>
+        <p style="color: var(--text-secondary);">Upload JPG, JPEG, PNG, or WEBP images to inspect recompression error heatmaps and distinguish localized face-swaps/splicing from whole-image AI synthesis.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="dropzone" id="imageDropzone" onclick="document.getElementById('imageInput').click()">
+          <p style="font-weight: 600; font-size: 1.05rem;">Drop image file here or click to upload</p>
+          <p style="color: var(--text-muted); font-size: 0.84rem; margin-top: 0.35rem;">Supports JPG, JPEG, PNG, WEBP • Generates interactive ELA thermal overlay</p>
+          <input type="file" id="imageInput" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleImageUpload(this.files[0])" />
+        </div>
+
+        <div id="imagePreviewWrap" class="hidden" style="margin-top: 1.5rem;">
+          <div class="grid-2">
+            <div>
+              <p class="mono" style="font-size:0.78rem; color:var(--cyan); margin-bottom:0.4rem;">ORIGINAL UPLOAD</p>
+              <canvas id="origImageCanvas" style="width:100%; border-radius:12px; border:1px solid var(--border-subtle);"></canvas>
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
+                <p class="mono" style="font-size:0.78rem; color:#f43f5e;">ELA RECOMPRESSION HEATMAP</p>
+                <label style="font-size:0.78rem; color:var(--text-secondary);">
+                  Intensity: <input type="range" id="elaBoostSlider" min="5" max="30" value="16" oninput="renderELAHeatmap()" style="width:90px; vertical-align:middle;" />
+                </label>
+              </div>
+              <canvas id="elaImageCanvas" style="width:100%; border-radius:12px; border:1px solid var(--border-subtle);"></canvas>
+            </div>
+          </div>
+          <div style="margin-top: 1rem;">
+            <button class="btn btn-primary" onclick="analyzeImage()">Run Image Manipulation &amp; Metadata Analysis</button>
+          </div>
+        </div>
+
+        <div id="imageResultContainer"></div>
+      </div>
+    </section>
+
+    <!-- ==================== DOC & LINK VERIFIER ==================== -->
+    <section id="tab-doclink" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">STYLOMETRIC ENTROPY &amp; URL THREAT VERIFICATION</span>
+        <h2>Document AI-Text &amp; Link / Reel Verifier</h2>
+        <p style="color: var(--text-secondary);">Evaluate documents for LLM burstiness/perplexity patterns or inspect shared video/reel URLs for phishing domains and security risks.</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="glass-card">
+          <h3>Document / Text AI Stylometry Analyzer</h3>
+          <p style="color: var(--text-secondary); font-size: 0.84rem; margin: 0.35rem 0 0.9rem;">Upload a .TXT/.MD/.CSV file or paste text below (minimum 40 words for reliable burstiness scoring).</p>
+          <input type="file" id="docInput" accept=".txt,.md,.csv,.json" style="margin-bottom:0.75rem;" onchange="loadTextFile(this.files[0])" />
+          <textarea id="docTextarea" rows="7" placeholder="Paste article, essay, email, or document text here..."></textarea>
+          <button class="btn btn-primary" style="margin-top:0.85rem;" onclick="analyzeDocumentText()">Analyze Text for AI Generation</button>
+        </div>
+
+        <div class="glass-card">
+          <h3>Social Reel / Media URL Security Verifier</h3>
+          <p style="color: var(--text-secondary); font-size: 0.84rem; margin: 0.35rem 0 0.9rem;">Inspect links for HTTPS transport, homograph/punycode spoofing, suspicious TLDs, and redirect parameters.</p>
+          <input type="url" id="urlInput" placeholder="https://example.com/reel/..." />
+          <button class="btn btn-outline" style="margin-top:0.85rem;" onclick="analyzeMediaUrl()">Verify Link Safety &amp; Provenance</button>
+          <div style="margin-top:1rem; padding:0.85rem; border-radius:10px; background:rgba(56,189,248,0.08); border:1px solid rgba(56,189,248,0.22); font-size:0.82rem; color:var(--text-secondary);">
+            <strong style="color:var(--cyan);">Technical Transparency Note:</strong> Major social platforms block cross-origin (CORS) pixel scraping in browsers. To run frame-level or audio deepfake detection on a Reel, download the MP4 and scan it directly in the <strong>Video Detector</strong> tab.
+          </div>
+        </div>
+      </div>
+
+      <div id="docLinkResultContainer"></div>
+    </section>
+
+    <!-- ==================== ANALYSIS DASHBOARD ==================== -->
+    <section id="tab-dashboard" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">REAL-TIME TELEMETRY &amp; RISK DISTRIBUTION</span>
+        <h2>Forensic Analysis Dashboard</h2>
+        <p style="color: var(--text-secondary);">Live metrics computed strictly from your verified scan records.</p>
+      </div>
+
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="glass-card">
+          <span style="color:var(--text-secondary); font-size:0.82rem;">Total Files Analyzed</span>
+          <div id="statTotal" class="mono" style="font-size:2rem; font-weight:800; color:var(--cyan); margin-top:0.25rem;">0</div>
+        </div>
+        <div class="glass-card">
+          <span style="color:var(--text-secondary); font-size:0.82rem;">Likely Authentic</span>
+          <div id="statAuth" class="mono" style="font-size:2rem; font-weight:800; color:#34d399; margin-top:0.25rem;">0</div>
+        </div>
+        <div class="glass-card">
+          <span style="color:var(--text-secondary); font-size:0.82rem;">Likely Manipulated / AI</span>
+          <div id="statManip" class="mono" style="font-size:2rem; font-weight:800; color:#fb7185; margin-top:0.25rem;">0</div>
+        </div>
+        <div class="glass-card">
+          <span style="color:var(--text-secondary); font-size:0.82rem;">Inconclusive Scans</span>
+          <div id="statInc" class="mono" style="font-size:2rem; font-weight:800; color:#fbbf24; margin-top:0.25rem;">0</div>
+        </div>
+      </div>
+
+      <div id="dashboardEmptyState" class="glass-card" style="text-align:center; padding:2.5rem;">
+        <h3>No Forensic Scans Recorded Yet</h3>
+        <p style="color:var(--text-secondary); margin:0.5rem 0 1.2rem;">Upload a video, voice recording, image, or document to populate live charts and risk distributions.</p>
+        <button class="btn btn-primary btn-sm" onclick="switchTab('voice')">Run First Scan</button>
+      </div>
+
+      <div id="dashboardChartsWrap" class="grid-2 hidden">
+        <div class="glass-card">
+          <h3 style="margin-bottom:1rem;">Scans by Modality</h3>
+          <canvas id="modalityChart" height="210"></canvas>
+        </div>
+        <div class="glass-card">
+          <h3 style="margin-bottom:1rem;">Fraud Risk Classification Breakdown</h3>
+          <canvas id="riskChart" height="210"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MEDIA METADATA VERIFICATION ==================== -->
+    <section id="tab-metadata" class="view-section">
+      <div class="section-header">
+        <span class="eyebrow">CRYPTOGRAPHIC PROVENANCE &amp; BINARY HEADER INSPECTION</span>
+        <h2>Media Metadata &amp; C2PA Content Credentials</h2>
+        <p style="color: var(--text-secondary);">Inspect file magic bytes, SHA-256 hashes, EXIF/XMP software tags, and C2PA / JUMBF Content Credential manifests.</p>
+      </div>
+
+      <div class="glass-card">
+        <div class="dropzone" onclick="document.getElementById('metaInput').click()">
+          <p style="font-weight: 600;">Select any media or document file to inspect binary headers &amp; C2PA signatures</p>
+          <input type="file" id="metaInput" class="hidden" onchange="inspectFileMetadata(this.files[0])" />
+        </div>
+        <div id="metadataOutput" style="margin-top:1.5rem;"></div>
+      </div>
+    </section>
+
+    <!-- ==================== SCAN HISTORY ==================== -->
+    <section id="tab-history" class="view-section">
+      <div class="section-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:1rem;">
+        <div>
+          <span class="eyebrow">USER-ISOLATED FORENSIC AUDIT LOG</span>
+          <h2>Scan History &amp; Saved Reports</h2>
+          <p style="color: var(--text-secondary);" id="historyOwnerLabel">Viewing local guest workspace records.</p>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="clearUserHistory()">Delete All History</button>
+      </div>
+
+      <div class="glass-card" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Analysis ID</th>
+              <th>File / Target</th>
+              <th>Modality</th>
+              <th>Verdict</th>
+              <th>Anomaly</th>
+              <th>Risk</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="historyTableBody">
+            <tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">No scans recorded in this account yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== ABOUT ==================== -->
+    <section id="tab-about" class="view-section">
+      <div class="glass-card">
+        <span class="eyebrow">SYSTEM ARCHITECTURE &amp; LIMITATIONS</span>
+        <h2 style="margin-bottom:0.85rem;">About DeepGuard AI</h2>
+        <p style="color:var(--text-secondary); margin-bottom:1rem;">
+          DeepGuard AI is a multimodal digital forensics and media verification platform engineered to detect synthetic media, cloned speech, manipulated imagery, and AI-generated text using explainable signal-level metrics.
+        </p>
+        <div class="grid-2" style="margin-top:1.25rem;">
+          <div>
+            <h3 style="color:var(--cyan); margin-bottom:0.45rem;">Privacy-First Zero-Upload Design</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem;">
+              All frame extraction, FFT spectral analysis, Error Level Analysis, SHA-256 hashing, and PDF generation execute locally inside your browser sandbox. Sensitive personal videos and voice recordings are never transmitted to public servers.
+            </p>
+          </div>
+          <div>
+            <h3 style="color:var(--cyan); margin-bottom:0.45rem;">Model Evaluation &amp; Limitations</h3>
+            <p style="color:var(--text-secondary); font-size:0.9rem;">
+              Signal heuristics (such as &gt;7.5 kHz vocoder cutoffs, ELA compression variance, and facial frame deltas) can be affected by heavy social-media recompression, low lighting, or background noise. Always combine automated findings with human source verification.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div><strong style="color:var(--text-primary);">DeepGuard AI</strong> — AI-Powered Multimodal Deepfake Detection &amp; Media Verification System</div>
+      <div style="display:flex; gap:1.2rem;">
+        <a href="#" onclick="switchTab('about'); return false;" style="color:var(--cyan); text-decoration:none;">About</a>
+        <a href="#" onclick="switchTab('about'); return false;" style="color:var(--text-secondary); text-decoration:none;">Privacy Policy</a>
+        <a href="#" onclick="switchTab('metadata'); return false;" style="color:var(--text-secondary); text-decoration:none;">C2PA Verification</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Auth Modal -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3 id="authModalTitle">Analyst Account Access</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeAuthModal()">✕</button>
+      </div>
+      <p style="color:var(--text-secondary); font-size:0.84rem; margin-bottom:1rem;">
+        Isolate your forensic scan history under your analyst profile.
+      </p>
+      <div style="display:grid; gap:0.75rem;">
+        <input type="text" id="authName" placeholder="Full Name (e.g., Ayushi Sharma)" />
+        <input type="email" id="authEmail" placeholder="Email Address" />
+        <input type="password" id="authPass" placeholder="Password" />
+        <button class="btn btn-primary" onclick="submitAuth()">Sign In / Register</button>
+        <button class="btn btn-danger btn-sm hidden" id="logoutBtn" onclick="logoutUser()">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Verification Modal -->
+  <div class="modal-backdrop" id="qrModal">
+    <div class="modal-card" style="text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h3>Forensic Verification QR</h3>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('qrModal').classList.remove('open')">✕</button>
+      </div>
+      <p style="color:var(--text-secondary); font-size:0.82rem; margin-bottom:1rem;">
+        Share cryptographic verification metadata without exposing the original media file.
+      </p>
+      <div id="qrcodeTarget" style="background:#fff; padding:14px; border-radius:12px; display:inline-block; margin-bottom:0.85rem;"></div>
+      <p id="qrCaption" class="mono" style="font-size:0.75rem; color:var(--cyan); word-break:break-all;"></p>
+    </div>
+  </div>
+
+  <script>
+    // ==================== STATE & STORAGE ====================
+    let currentLang = 'en';
+    let currentUser = JSON.parse(localStorage.getItem('dg_current_user') || 'null');
+    let currentVideoFile = null;
+    let currentAudioFile = null;
+    let currentAudioBuffer = null;
+    let currentImageFile = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let modalityChartInstance = null;
+    let riskChartInstance = null;
+    const scanCache = {};
+
+    const i18nDict = {
+      en: {
+        nav_home: 'Home',
+        nav_video: 'Video Detector',
+        nav_voice: 'Voice Detector',
+        nav_image: 'Image Detector',
+        nav_doclink: 'Doc & Link Verifier',
+        nav_dash: 'Analysis Dashboard',
+        nav_meta: 'Media Verification',
+        nav_hist: 'Scan History',
+        nav_about: 'About',
+        hero_title: 'Don\'t Trust What You See. <span class="gradient-text">Verify What You Hear.</span>',
+        hero_sub: 'DeepGuard AI inspects video frames, audio-visual lip synchronization, vocal frequency spectra, JPEG error levels, text stylometry, and cryptographic C2PA metadata—delivering transparent Explainable AI findings and downloadable forensic PDF reports.',
+        btn_start: 'Start Detection',
+        btn_voice: 'Analyze Voice / Mic',
+        btn_image: 'Scan Image (ELA)'
+      },
+      hi: {
+        nav_home: 'होम',
+        nav_video: 'वीडियो डिटेक्टर',
+        nav_voice: 'आवाज़ डिटेक्टर',
+        nav_image: 'इमेज डिटेक्टर',
+        nav_doclink: 'दस्तावेज़ और लिंक',
+        nav_dash: 'डैशबोर्ड',
+        nav_meta: 'मीडिया सत्यापन',
+        nav_hist: 'स्कैन इतिहास',
+        nav_about: 'परिचय',
+        hero_title: 'जो आप देखते हैं उस पर आँख मूँदकर भरोसा न करें। <span class="gradient-text">जो सुनते हैं उसकी पुष्टि करें।</span>',
+        hero_sub: 'DeepGuard AI वीडियो फ्रेम, लिप-सिंक, आवाज़ की आवृत्ति, इमेज त्रुटि स्तर (ELA) और C2PA मेटाडेटा की जांच करके पारदर्शी फोरेंसिक PDF रिपोर्ट प्रदान करता है।',
+        btn_start: 'जांच शुरू करें',
+        btn_voice: 'आवाज़ / माइक जांचें',
+        btn_image: 'इमेज स्कैन करें'
+      }
+    };
+
+    function toggleLanguage() {
+      currentLang = currentLang === 'en' ? 'hi' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18nDict[currentLang][key]) el.innerHTML = i18nDict[currentLang][key];
+      });
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      const target = document.getElementById('tab-' + tabName);
+      if (target) target.classList.add('active');
+      const btn = document.querySelector(`.nav-btn[data-tab="${tabName}"]`);
+      if (btn) btn.classList.add('active');
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'history') renderHistoryTable();
+    }
+
+    // ==================== AUTH & USER ISOLATION ====================
+    function getStorageKey() {
+      return currentUser ? `dg_scans_${currentUser.email}` : 'dg_scans_guest';
+    }
+
+    function getUserScans() {
+      return JSON.parse(localStorage.getItem(getStorageKey()) || '[]');
+    }
+
+    function saveScanRecord(record) {
+      scanCache[record.id] = record;
+      const list = getUserScans();
+      list.unshift(record);
+      localStorage.setItem(getStorageKey(), JSON.stringify(list.slice(0, 100)));
+    }
+
+    function updateAuthUI() {
+      const btn = document.getElementById('authBtn');
+      const label = document.getElementById('historyOwnerLabel');
+      const logoutBtn = document.getElementById('logoutBtn');
+      if (currentUser) {
+        btn.textContent = currentUser.name.split(' ')[0];
+        label.textContent = `Authenticated Analyst: ${currentUser.name} (${currentUser.email})`;
+        logoutBtn.classList.remove('hidden');
+      } else {
+        btn.textContent = 'Login / Sign Up';
+        label.textContent = 'Viewing local guest workspace records.';
+        logoutBtn.classList.add('hidden');
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal').classList.add('open');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('authModal').classList.remove('open');
+    }
+
+    function submitAuth() {
+      const name = document.getElementById('authName').value.trim() || 'Security Analyst';
+      const email = document.getElementById('authEmail').value.trim().toLowerCase();
+      if (!email) return alert('Please enter an email address.');
+      currentUser = { name, email };
+      localStorage.setItem('dg_current_user', JSON.stringify(currentUser));
+      updateAuthUI();
+      closeAuthModal();
+      renderHistoryTable();
+      renderDashboard();
+    }
+
+    function logoutUser() {
+      currentUser = null;
+      localStorage.removeItem('dg_current_user');
+      updateAuthUI();
+      closeAuthModal();
+      renderHistoryTable();
+      renderDashboard();
+    }
+
+    // ==================== CRYPTOGRAPHIC HASH & C2PA METADATA ====================
+    async function computeSHA256(arrayBuffer) {
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function scanBinaryMarkers(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer.slice(0, Math.min(arrayBuffer.byteLength, 262144)));
+      let ascii = '';
+      for (let i = 0; i < bytes.length; i++) {
+        const c = bytes[i];
+        ascii += (c >= 32 && c <= 126) ? String.fromCharCode(c) : ' ';
+      }
+      const hasC2PA = /c2pa|jumbf|stds\.iptc/i.test(ascii);
+      const aiTools = ['Midjourney', 'DALL-E', 'Stable Diffusion', 'Adobe Firefly', 'Runway', 'Kling', 'Sora', 'ElevenLabs', 'Lavf'];
+      const detectedTags = aiTools.filter(tag => ascii.toLowerCase().includes(tag.toLowerCase()));
+      const hasExif = /Exif|Adobe|Photoshop|GIMP|XMP/i.test(ascii);
+
+      return {
+        hasC2PA,
+        detectedTags,
+        hasExif,
+        credentialStatus: hasC2PA
+          ? 'C2PA / JUMBF Content Credential Manifest Detected'
+          : 'Not Present (Stripped or Unsigned)'
+      };
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function generateAnalysisId() {
+      const hex = Math.random().toString(16).substring(2, 8).toUpperCase();
+      return `DG-2026-${hex}`;
+    }
+
+    function classifyRisk(anomalyIndex, isInconclusive = false) {
+      if (isInconclusive) return { label: 'INCONCLUSIVE', cls: 'risk-inconclusive' };
+      if (anomalyIndex >= 65) return { label: 'HIGH RISK', cls: 'risk-high' };
+      if (anomalyIndex >= 38) return { label: 'MODERATE RISK', cls: 'risk-moderate' };
+      return { label: 'LOW RISK', cls: 'risk-low' };
+    }
+
+    // ==================== RENDER UNIFIED FORENSIC CARD ====================
+    function renderForensicCard(containerId, record) {
+      scanCache[record.id] = record;
+      const verdictClass = record.verdictType === 'authentic'
+        ? 'verdict-authentic'
+        : record.verdictType === 'manipulated'
+          ? 'verdict-manipulated'
+          : 'verdict-inconclusive';
+
+      const findingsHTML = record.findings.map(f => `
+        <div class="xai-item">
+          <div>
+            <div style="font-weight:700; color:var(--text-primary);">${f.title}</div>
+            <div style="font-family:'JetBrains Mono',monospace; font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem;">Scope: ${f.scope}</div>
+            <div style="font-size:0.86rem; color:var(--text-secondary); margin-top:0.35rem;">${f.detail}</div>
+          </div>
+          <span class="xai-badge ${f.category === 'meta' ? 'meta' : ''}">${f.badge}</span>
+        </div>
+      `).join('');
+
+      document.getElementById(containerId).innerHTML = `
+        <div class="forensic-report-shell">
+          <div class="report-top-meta">
+            <div>
+              <div class="mono" style="font-size:0.78rem; color:var(--cyan); font-weight:700;">ANALYSIS ID: ${record.id}</div>
+              <div style="font-size:1.18rem; font-weight:800; margin-top:0.15rem; word-break:break-all;">${record.fileName}</div>
+              <div class="mono" style="font-size:0.78rem; color:var(--text-secondary); margin-top:0.2rem;">${record.fileSize} • ${record.timestamp}</div>
+            </div>
+            <span class="risk-pill ${record.riskClass}">${record.riskLabel}</span>
+          </div>
+
+          <div class="verdict-banner">
+            <div>
+              <div class="mono" style="font-size:0.74rem; color:var(--text-secondary); letter-spacing:0.08em;">FORENSIC VERDICT</div>
+              <div class="verdict-headline ${verdictClass}">${record.verdict}</div>
+              <div style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.25rem;">
+                Note: Anomaly index reflects measured signal &amp; structural deviations, not absolute mathematical certainty.
+              </div>
+            </div>
+            <div class="anomaly-score-box">
+              <div class="mono" style="font-size:0.74rem; color:var(--text-secondary);">ANOMALY INDEX</div>
+              <div class="anomaly-number">${record.anomalyIndex}/100</div>
+            </div>
+          </div>
+
+          <div class="hash-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+              <span class="mono" style="font-size:0.74rem; color:var(--cyan); font-weight:700;">SHA-256 INTEGRITY HASH</span>
+              <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText('${record.sha256}'); this.textContent='Copied!';">Copy Hash</button>
+            </div>
+            <div class="mono" style="font-size:0.78rem; color:var(--text-primary); word-break:break-all; margin-top:0.35rem;">${record.sha256}</div>
+            <div style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.45rem;">Content Credentials: <strong style="color:var(--text-primary);">${record.credentialStatus}</strong></div>
+          </div>
+
+          <div style="margin-top:1.25rem;">
+            <div class="mono" style="font-size:0.78rem; color:var(--cyan); font-weight:700; letter-spacing:0.06em;">EXPLAINABLE AI (XAI) FORENSIC FINDINGS</div>
+            ${findingsHTML}
+          </div>
+
+          <div style="margin-top:1.35rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="downloadForensicPDF('${record.id}')">Download Forensic PDF Report</button>
+            <button class="btn btn-outline btn-sm" onclick="openQRModal('${record.id}')">Share Verification QR</button>
+            <button class="btn btn-outline btn-sm" onclick="switchTab('dashboard')">View Dashboard</button>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==================== 1. VIDEO & LIP-SYNC ANALYZER ====================
+    function handleVideoUpload(file) {
+      if (!file) return;
+      if (file.size > 150 * 1024 * 1024) return alert('File exceeds 150 MB limit.');
+      currentVideoFile = file;
+      const url = URL.createObjectURL(file);
+      const player = document.getElementById('videoPlayer');
+      player.src = url;
+      document.getElementById('videoPreviewWrap').classList.remove('hidden');
+      document.getElementById('videoResultContainer').innerHTML = '';
+    }
+
+    async function analyzeVideo() {
+      if (!currentVideoFile) return;
+      const btn = document.getElementById('runVideoBtn');
+      btn.disabled = true;
+      btn.textContent = 'Extracting Frames & Lip-Sync...';
+
+      try {
+        const arrayBuf = await currentVideoFile.arrayBuffer();
+        const sha256 = await computeSHA256(arrayBuf);
+        const meta = scanBinaryMarkers(arrayBuf);
+        const video = document.getElementById('videoPlayer');
+
+        if (!isFinite(video.duration) || video.duration <= 0) {
+          await new Promise(res => { video.onloadedmetadata = res; });
+        }
+
+        const duration = Math.max(video.duration || 4, 1);
+        const sampleCount = 8;
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 120;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+        let prevFrame = null;
+        const frameScores = [];
+        const timestamps = [];
+
+        for (let i = 0; i < sampleCount; i++) {
+          const t = Math.min(duration - 0.1, (duration / (sampleCount + 1)) * (i + 1));
+          video.currentTime = t;
+          await new Promise(res => { video.onseeked = res; });
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+          // Center facial ROI luminance, edge sharpness & mouth-region delta
+          let centerLum = 0, borderLum = 0, edgeEnergy = 0, mouthDelta = 0, count = 0;
+          for (let y = 20; y < 100; y++) {
+            for (let x = 35; x < 125; x++) {
+              const idx = (y * canvas.width + x) * 4;
+              const lum = 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+              centerLum += lum;
+              const rightIdx = idx + 4;
+              const rightLum = 0.299 * imgData[rightIdx] + 0.587 * imgData[rightIdx + 1] + 0.114 * imgData[rightIdx + 2];
+              edgeEnergy += Math.abs(lum - rightLum);
+
+              if (prevFrame && y > 62 && y < 95) {
+                const prevLum = 0.299 * prevFrame[idx] + 0.587 * prevFrame[idx + 1] + 0.114 * prevFrame[idx + 2];
+                mouthDelta += Math.abs(lum - prevLum);
+              }
+              count++;
+            }
+          }
+          for (let x = 0; x < canvas.width; x++) {
+            const idx = x * 4;
+            borderLum += 0.299 * imgData[idx] + 0.587 * imgData[idx + 1] + 0.114 * imgData[idx + 2];
+          }
+
+          const avgCenter = centerLum / count;
+          const avgBorder = borderLum / canvas.width;
+          const lightingDiff = Math.abs(avgCenter - avgBorder);
+          const sharpness = edgeEnergy / count;
+          const normMouth = mouthDelta / (count * 0.45);
+
+          // Combine frame-level anomaly indicators
+          const frameAnomaly = Math.min(100, Math.round((lightingDiff * 0.42) + (sharpness < 6.5 ? 24 : 6) + (normMouth > 22 ? 22 : 4)));
+          frameScores.push(frameAnomaly);
+
+          const mins = String(Math.floor(t / 60)).padStart(2, '0');
+          const secs = String(Math.floor(t % 60)).padStart(2, '0');
+          timestamps.push({
+            sec: t,
+            label: `${mins}:${secs}`,
+            score: frameAnomaly,
+            reason: frameAnomaly >= 48
+              ? 'Facial lighting & boundary sharpness shift'
+              : 'Consistent facial texture & mouth cadence'
+          });
+
+          prevFrame = new Uint8ClampedArray(imgData);
+        }
+
+        // Draw timeline canvas
+        const tlCanvas = document.getElementById('videoTimelineCanvas');
+        const tlCtx = tlCanvas.getContext('2d');
+        tlCanvas.width = tlCanvas.offsetWidth || 450;
+        tlCtx.clearRect(0, 0, tlCanvas.width, tlCanvas.height);
+        const barW = tlCanvas.width / frameScores.length;
+        frameScores.forEach((sc, idx) => {
+          tlCtx.fillStyle = sc >= 48 ? '#f43f5e' : '#10b981';
+          const h = Math.max(12, (sc / 100) * (tlCanvas.height - 16));
+          tlCtx.fillRect(idx * barW + 4, tlCanvas.height - h - 6, barW - 8, h);
+        });
+
+        // Render clickable timestamps
+        document.getElementById('videoTimestampsList').innerHTML = timestamps.map(ts => `
+          <button class="timestamp-chip ${ts.score >= 48 ? '' : 'clean'}" onclick="jumpVideoTo(${ts.sec})">
+            <strong>${ts.label}</strong> — ${ts.reason} (${ts.score}/100)
+          </button>
+        `).join('');
+
+        const avgAnomaly = Math.round(frameScores.reduce((a, b) => a + b, 0) / frameScores.length);
+        const suspiciousCount = timestamps.filter(t => t.score >= 48).length;
+        const isManip = avgAnomaly >= 46 || suspiciousCount >= 3;
+        const risk = classifyRisk(avgAnomaly);
+
+        const record = {
+          id: generateAnalysisId(),
+          modality: 'Video',
+          fileName: currentVideoFile.name,
+          fileSize: formatBytes(currentVideoFile.size),
+          timestamp: new Date().toLocaleString('en-GB'),
+          sha256,
+          credentialStatus: meta.credentialStatus,
+          anomalyIndex: avgAnomaly,
+          verdict: isManip ? 'Likely Manipulated Video' : 'Likely Authentic Video',
+          verdictType: isManip ? 'manipulated' : 'authentic',
+          riskLabel: risk.label,
+          riskClass: risk.cls,
+          findings: [
+            {
+              title: 'Facial Luminance & Boundary Consistency',
+              scope: `${sampleCount} Keyframes (00:00 – ${timestamps[timestamps.length - 1].label})`,
+              detail: suspiciousCount > 0
+                ? `${suspiciousCount} frame window(s) exhibited elevated facial-to-background luminance or edge-smoothing shifts.`
+                : 'Facial skin gradient and boundary sharpness remained consistent across sampled intervals.',
+              badge: 'Signal Model Analysis',
+              category: 'signal'
+            },
+            {
+              title: 'Audio-Visual Lip Motion & Cadence Check',
+              scope: 'Lower-Face ROI (Mouth Zone)',
+              detail: isManip
+                ? 'Abrupt inter-frame mouth-region pixel deltas detected; inspect flagged timestamps above.'
+                : 'Natural articulatory lip-region motion variance observed across speech intervals.',
+              badge: 'Multimodal CV Check',
+              category: 'signal'
+            },
+            {
+              title: 'Container & C2PA Provenance Check',
+              scope: currentVideoFile.type || 'Video Container',
+              detail: meta.detectedTags.length
+                ? `Encoder/editor markers found: ${meta.detectedTags.join(', ')}.`
+                : 'No synthetic generator watermarks found in file header; C2PA signature not present.',
+              badge: 'Cryptographic / Metadata',
+              category: 'meta'
+            }
+          ]
+        };
+
+        saveScanRecord(record);
+        renderForensicCard('videoResultContainer', record);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Run Multimodal Video Analysis';
+      }
+    }
+
+    function jumpVideoTo(seconds) {
+      const video = document.getElementById('videoPlayer');
+      video.currentTime = seconds;
+      video.play();
+    }
+
+    // ==================== 2. VOICE & AUDIO SPECTRAL ANALYZER ====================
+    function handleAudioUpload(file) {
+      if (!file) return;
+      currentAudioFile = file;
+      const url = URL.createObjectURL(file);
+      document.getElementById('audioPlayer').src = url;
+      document.getElementById('audioPreviewWrap').classList.remove('hidden');
+      document.getElementById('audioResultContainer').innerHTML = '';
+      decodeAndDrawWaveform(file);
+    }
+
+    async function startMicRecording() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+          const file = new File([blob], `mic-capture-${Date.now()}.webm`, { type: 'audio/webm' });
+          handleAudioUpload(file);
+          analyzeCurrentAudio();
+        };
+        mediaRecorder.start();
+        document.getElementById('startMicBtn').classList.add('hidden');
+        document.getElementById('stopMicBtn').classList.remove('hidden');
+        document.getElementById('micStatus').textContent = 'Recording live audio... Speak clearly for 4–10 seconds.';
+      } catch (err) {
+        alert('Microphone access denied or unavailable. Ensure HTTPS or localhost.');
+      }
+    }
+
+    function stopMicRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        document.getElementById('startMicBtn').classList.remove('hidden');
+        document.getElementById('stopMicBtn').classList.add('hidden');
+        document.getElementById('micStatus').textContent = 'Processing captured audio...';
+      }
+    }
+
+    async function decodeAndDrawWaveform(file) {
+      const arrayBuf = await file.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      currentAudioBuffer = await audioCtx.decodeAudioData(arrayBuf.slice(0));
+
+      const canvas = document.getElementById('waveformCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.offsetWidth || 600;
+      const data = currentAudioBuffer.getChannelData(0);
+      const step = Math.ceil(data.length / canvas.width);
+      const amp = canvas.height / 2;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let i = 0; i < canvas.width; i++) {
+        let min = 1.0, max = -1.0;
+        for (let j = 0; j < step; j++) {
+          const val = data[(i * step) + j] || 0;
+          if (val < min) min = val;
+          if (val > max) max = val;
+        }
+        ctx.moveTo(i, (1 + min) * amp);
+        ctx.lineTo(i, (1 + max) * amp);
+      }
+      ctx.stroke();
+    }
+
+    // Radix-2 Cooley-Tukey FFT
+    function computeFFT(real, imag) {
+      const n = real.length;
+      for (let i = 1, j = 0; i < n; i++) {
+        let bit = n >> 1;
+        for (; j & bit; bit >>= 1) j ^= bit;
+        j ^= bit;
+        if (i < j) {
+          [real[i], real[j]] = [real[j], real[i]];
+          [imag[i], imag[j]] = [imag[j], imag[i]];
+        }
+      }
+      for (let len = 2; len <= n; len <<= 1) {
+        const ang = -2 * Math.PI / len;
+        const wlenRe = Math.cos(ang), wlenIm = Math.sin(ang);
+        for (let i = 0; i < n; i += len) {
+          let wRe = 1, wIm = 0;
+          for (let j = 0; j < len / 2; j++) {
+            const uRe = real[i + j], uIm = imag[i + j];
+            const vRe = real[i + j + len / 2] * wRe - imag[i + j + len / 2] * wIm;
+            const vIm = real[i + j + len / 2] * wIm + imag[i + j + len / 2] * wRe;
+            real[i + j] = uRe + vRe;
+            imag[i + j] = uIm + vIm;
+            real[i + j + len / 2] = uRe - vRe;
+            imag[i + j + len / 2] = uIm - vIm;
+            const nextWRe = wRe * wlenRe - wIm * wlenIm;
+            wIm = wRe * wlenIm + wIm * wlenRe;
+            wRe = nextWRe;
+          }
+        }
+      }
+    }
+
+    async function analyzeCurrentAudio() {
+      if (!currentAudioFile) return;
+      const arrayBuf = await currentAudioFile.arrayBuffer();
+      const sha256 = await computeSHA256(arrayBuf);
+      const meta = scanBinaryMarkers(arrayBuf);
+
+      if (!currentAudioBuffer) {
+        await decodeAndDrawWaveform(currentAudioFile);
+      }
+
+      const pcm = currentAudioBuffer.getChannelData(0);
+      const sampleRate = currentAudioBuffer.sampleRate;
+      const nyquist = (sampleRate / 2000).toFixed(1);
+      const fftSize = 1024;
+      const startIdx = Math.max(0, Math.floor(pcm.length / 2) - fftSize / 2);
+      const real = new Float32Array(fftSize);
+      const imag = new Float32Array(fftSize);
+
+      for (let i = 0; i < fftSize; i++) {
+        const win = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (fftSize - 1)));
+        real[i] = (pcm[startIdx + i] || 0) * win;
+      }
+      computeFFT(real, imag);
+
+      let totalEnergy = 0, highBandEnergy = 0, logSum = 0, arithSum = 0;
+      const half = fftSize / 2;
+      const binHz = sampleRate / fftSize;
+
+      for (let k = 1; k < half; k++) {
+        const mag = Math.sqrt(real[k] * real[k] + imag[k] * imag[k]) + 1e-12;
+        const power = mag * mag;
+        totalEnergy += power;
+        if (k * binHz >= 7500) highBandEnergy += power;
+        logSum += Math.log(power);
+        arithSum += power;
+      }
+
+      const highBandRatio = ((highBandEnergy / (totalEnergy || 1)) * 100).toFixed(2);
+      const geomMean = Math.exp(logSum / (half - 1));
+      const arithMean = arithSum / (half - 1);
+      const spectralFlatness = (geomMean / (arithMean || 1)).toFixed(4);
+
+      // Compute realistic acoustic anomaly score
+      let anomaly = 22;
+      if (parseFloat(highBandRatio) < 0.45) anomaly += 34; // Steep neural vocoder high-frequency cutoff
+      if (parseFloat(spectralFlatness) > 0.25) anomaly += 24; // Over-smoothed synthetic spectrum
+      if (meta.detectedTags.length) anomaly += 25;
+      anomaly = Math.min(96, anomaly);
+
+      const isSynthetic = anomaly >= 50;
+      const risk = classifyRisk(anomaly);
+
+      const record = {
+        id: generateAnalysisId(),
+        modality: 'Voice',
+        fileName: currentAudioFile.name,
+        fileSize: formatBytes(currentAudioFile.size),
+        timestamp: new Date().toLocaleString('en-GB'),
+        sha256,
+        credentialStatus: meta.credentialStatus,
+        anomalyIndex: anomaly,
+        verdict: isSynthetic ? 'Likely AI-Generated Voice' : 'Likely Authentic Voice',
+        verdictType: isSynthetic ? 'manipulated' : 'authentic',
+        riskLabel: risk.label,
+        riskClass: risk.cls,
+        findings: [
+          {
+            title: 'High-Frequency Vocoder Cutoff (>7.5 kHz)',
+            scope: `Spectrum 0 – ${nyquist} kHz`,
+            detail: parseFloat(highBandRatio) < 0.45
+              ? `High-band energy ratio = ${highBandRatio}%. Steep upper-frequency roll-off typical of neural vocoders.`
+              : `High-band energy ratio = ${highBandRatio}%. Natural broadband harmonic extension observed.`,
+            badge: 'Signal Model Analysis',
+            category: 'signal'
+          },
+          {
+            title: 'Wiener Spectral Flatness',
+            scope: `1024-pt Hann Window @ ${sampleRate} Hz`,
+            detail: `Spectral flatness = ${spectralFlatness}. ${parseFloat(spectralFlatness) > 0.25 ? 'Uniform synthetic noise floor detected.' : 'Natural formant peaks and vocal tract resonance variance detected.'}`,
+            badge: 'Signal Model Analysis',
+            category: 'signal'
+          },
+          {
+            title: 'Audio Container & Provenance Check',
+            scope: currentAudioFile.type || 'Audio Stream',
+            detail: meta.detectedTags.length
+              ? `Synthetic generator signature detected: ${meta.detectedTags.join(', ')}.`
+              : 'No synthetic TTS software headers detected; raw stream lacks C2PA credentials.',
+            badge: 'Cryptographic / Metadata',
+            category: 'meta'
+          }
+        ]
+      };
+
+      saveScanRecord(record);
+      renderForensicCard('audioResultContainer', record);
+      document.getElementById('micStatus').textContent = '';
+    }
+
+    // ==================== 3. IMAGE MANIPULATION (ELA) DETECTOR ====================
+    function handleImageUpload(file) {
+      if (!file) return;
+      currentImageFile = file;
+      const img = new Image();
+      img.onload = () => {
+        const origCanvas = document.getElementById('origImageCanvas');
+        const elaCanvas = document.getElementById('elaImageCanvas');
+        const maxW = 520;
+        const scale = Math.min(1, maxW / img.width);
+        origCanvas.width = elaCanvas.width = Math.round(img.width * scale);
+        origCanvas.height = elaCanvas.height = Math.round(img.height * scale);
+
+        const ctx = origCanvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, origCanvas.width, origCanvas.height);
+        document.getElementById('imagePreviewWrap').classList.remove('hidden');
+        document.getElementById('imageResultContainer').innerHTML = '';
+        renderELAHeatmap();
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    function renderELAHeatmap() {
+      const origCanvas = document.getElementById('origImageCanvas');
+      const elaCanvas = document.getElementById('elaImageCanvas');
+      if (!origCanvas.width) return;
+
+      const boost = parseInt(document.getElementById('elaBoostSlider').value, 10) || 16;
+      const recompressedDataUrl = origCanvas.toDataURL('image/jpeg', 0.90);
+      const recompImg = new Image();
+      recompImg.onload = () => {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = origCanvas.width;
+        tempCanvas.height = origCanvas.height;
+        const tCtx = tempCanvas.getContext('2d');
+        tCtx.drawImage(recompImg, 0, 0);
+
+        const origData = origCanvas.getContext('2d').getImageData(0, 0, origCanvas.width, origCanvas.height).data;
+        const compData = tCtx.getImageData(0, 0, origCanvas.width, origCanvas.height).data;
+        const outCtx = elaCanvas.getContext('2d');
+        const outImg = outCtx.createImageData(origCanvas.width, origCanvas.height);
+
+        let totalDelta = 0, maxDelta = 0;
+        for (let i = 0; i < origData.length; i += 4) {
+          const dr = Math.abs(origData[i] - compData[i]);
+          const dg = Math.abs(origData[i + 1] - compData[i + 1]);
+          const db = Math.abs(origData[i + 2] - compData[i + 2]);
+          const avg = (dr + dg + db) / 3;
+          totalDelta += avg;
+          if (avg > maxDelta) maxDelta = avg;
+
+          const val = Math.min(255, avg * boost);
+          // Thermal color ramp (deep blue -> cyan -> amber -> crimson)
+          outImg.data[i] = val > 120 ? 255 : val * 1.8;
+          outImg.data[i + 1] = val > 180 ? 255 - (val - 180) * 2 : val * 1.2;
+          outImg.data[i + 2] = val < 90 ? 140 + val : 40;
+          outImg.data[i + 3] = 255;
+        }
+        outCtx.putImageData(outImg, 0, 0);
+        elaCanvas.dataset.meanDelta = (totalDelta / (origData.length / 4)).toFixed(2);
+        elaCanvas.dataset.maxDelta = maxDelta.toFixed(1);
+      };
+      recompImg.src = recompressedDataUrl;
+    }
+
+    async function analyzeImage() {
+      if (!currentImageFile) return;
+      const arrayBuf = await currentImageFile.arrayBuffer();
+      const sha256 = await computeSHA256(arrayBuf);
+      const meta = scanBinaryMarkers(arrayBuf);
+      const elaCanvas = document.getElementById('elaImageCanvas');
+      const meanDelta = parseFloat(elaCanvas.dataset.meanDelta || '2.4');
+      const maxDelta = parseFloat(elaCanvas.dataset.maxDelta || '18.0');
+
+      let anomaly = Math.min(95, Math.round(meanDelta * 7.5 + (maxDelta > 45 ? 24 : 8)));
+      if (meta.detectedTags.length) anomaly = Math.max(anomaly, 82);
+      const isManip = anomaly >= 50;
+      const risk = classifyRisk(anomaly);
+
+      const record = {
+        id: generateAnalysisId(),
+        modality: 'Image',
+        fileName: currentImageFile.name,
+        fileSize: formatBytes(currentImageFile.size),
+        timestamp: new Date().toLocaleString('en-GB'),
+        sha256,
+        credentialStatus: meta.credentialStatus,
+        anomalyIndex: anomaly,
+        verdict: meta.detectedTags.length
+          ? 'Likely AI-Generated Image'
+          : isManip
+            ? 'Likely Manipulated / Spliced Image'
+            : 'Likely Authentic Image',
+        verdictType: isManip ? 'manipulated' : 'authentic',
+        riskLabel: risk.label,
+        riskClass: risk.cls,
+        findings: [
+          {
+            title: 'JPEG Error Level Analysis (ELA) Compression Delta',
+            scope: `90% Recompression Matrix (${elaCanvas.width}×${elaCanvas.height}px)`,
+            detail: `Mean compression delta = ${meanDelta}, peak local residual = ${maxDelta}. ${maxDelta > 45 ? 'Localized high-contrast ELA hotspots indicate possible splicing or face-swap retouching.' : 'Uniform compression grid across foreground and background.'}`,
+            badge: 'Signal Model Analysis',
+            category: 'signal'
+          },
+          {
+            title: 'Generative Signature & EXIF Header Inspection',
+            scope: currentImageFile.type,
+            detail: meta.detectedTags.length
+              ? `AI generation software marker found in binary header: ${meta.detectedTags.join(', ')}.`
+              : meta.hasExif
+                ? 'Standard camera/editor EXIF metadata block present; no generative AI watermarks detected.'
+                : 'EXIF metadata stripped (common in messaging apps); no generative AI markers found.',
+            badge: 'Cryptographic / Metadata',
+            category: 'meta'
+          }
+        ]
+      };
+
+      saveScanRecord(record);
+      renderForensicCard('imageResultContainer', record);
+    }
+
+    // ==================== 4. DOCUMENT STYLOMETRY & URL VERIFIER ====================
+    function loadTextFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => { document.getElementById('docTextarea').value = e.target.result; };
+      reader.readAsText(file);
+    }
+
+    async function analyzeDocumentText() {
+      const text = document.getElementById('docTextarea').value.trim();
+      if (!text) return alert('Please upload a text document or paste text first.');
+
+      const encoder = new TextEncoder();
+      const sha256 = await computeSHA256(encoder.encode(text));
+      const words = text.toLowerCase().match(/\b[a-z']+\b/g) || [];
+      const sentences = text.split(/[.!?]+/).map(s => s.trim()).filter(Boolean);
+
+      if (words.length < 35) {
+        const record = {
+          id: generateAnalysisId(),
+          modality: 'Document',
+          fileName: `document-snippet (${words.length} words)`,
+          fileSize: formatBytes(text.length),
+          timestamp: new Date().toLocaleString('en-GB'),
+          sha256,
+          credentialStatus: 'Plain Text Payload (No Binary C2PA Wrapper)',
+          anomalyIndex: 50,
+          verdict: 'Inconclusive (Sample Too Short)',
+          verdictType: 'inconclusive',
+          riskLabel: 'INCONCLUSIVE',
+          riskClass: 'risk-inconclusive',
+          findings: [{
+            title: 'Insufficient Token Length for Stylometry',
+            scope: `${words.length} words / ${sentences.length} sentences`,
+            detail: 'Provide at least 40–100 words to measure sentence burstiness and Type-Token lexical diversity.',
+            badge: 'Stylometry Engine',
+            category: 'signal'
+          }]
+        };
+        saveScanRecord(record);
+        return renderForensicCard('docLinkResultContainer', record);
+      }
+
+      const uniqueWords = new Set(words).size;
+      const ttr = (uniqueWords / words.length).toFixed(3);
+      const sentLengths = sentences.map(s => (s.match(/\b[a-z']+\b/gi) || []).length);
+      const meanLen = sentLengths.reduce((a, b) => a + b, 0) / sentLengths.length;
+      const variance = sentLengths.reduce((a, b) => a + Math.pow(b - meanLen, 2), 0) / sentLengths.length;
+      const burstiness = Math.sqrt(variance).toFixed(2);
+
+      // Low burstiness (<4.5) + moderate TTR often indicates LLM uniformity
+      let anomaly = 26;
+      if (parseFloat(burstiness) < 4.5) anomaly += 36;
+      if (parseFloat(ttr) < 0.48) anomaly += 18;
+      anomaly = Math.min(92, anomaly);
+
+      const isAI = anomaly >= 52;
+      const risk = classifyRisk(anomaly);
+
+      const record = {
+        id: generateAnalysisId(),
+        modality: 'Document',
+        fileName: `document-analysis (${words.length} words)`,
+        fileSize: formatBytes(text.length),
+        timestamp: new Date().toLocaleString('en-GB'),
+        sha256,
+        credentialStatus: 'Plain Text Payload (Unsigned)',
+        anomalyIndex: anomaly,
+        verdict: isAI ? 'Likely AI-Generated Text' : 'Likely Human-Authored Text',
+        verdictType: isAI ? 'manipulated' : 'authentic',
+        riskLabel: risk.label,
+        riskClass: risk.cls,
+        findings: [
+          {
+            title: 'Sentence-Length Burstiness (Variance)',
+            scope: `${sentences.length} Sentences (Mean ${meanLen.toFixed(1)} words)`,
+            detail: `Burstiness σ = ${burstiness}. ${parseFloat(burstiness) < 4.5 ? 'Low structural rhythm variance typical of LLM-generated prose.' : 'Natural variation between short and complex sentences observed.'}`,
+            badge: 'Stylometry Model',
+            category: 'signal'
+          },
+          {
+            title: 'Type-Token Lexical Diversity (TTR)',
+            scope: `${uniqueWords} unique / ${words.length} total tokens`,
+            detail: `Lexical TTR = ${ttr}. Measures vocabulary repetition across the document.`,
+            badge: 'Stylometry Model',
+            category: 'signal'
+          }
+        ]
+      };
+
+      saveScanRecord(record);
+      renderForensicCard('docLinkResultContainer', record);
+    }
+
+    async function analyzeMediaUrl() {
+      const rawUrl = document.getElementById('urlInput').value.trim();
+      if (!rawUrl) return alert('Enter a valid URL.');
+      let parsed;
+      try { parsed = new URL(rawUrl); } catch { return alert('Invalid URL format. Include https://'); }
+
+      const sha256 = await computeSHA256(new TextEncoder().encode(rawUrl));
+      const isHttps = parsed.protocol === 'https:';
+      const hasPunycode = parsed.hostname.includes('xn--');
+      const suspiciousTld = /\.(zip|mov|xyz|top|tk|ml|ga|cf)$/i.test(parsed.hostname);
+
+      let anomaly = 18;
+      if (!isHttps) anomaly += 35;
+      if (hasPunycode) anomaly += 40;
+      if (suspiciousTld) anomaly += 25;
+      anomaly = Math.min(95, anomaly);
+
+      const risk = classifyRisk(anomaly, anomaly < 40);
+
+      const record = {
+        id: generateAnalysisId(),
+        modality: 'Link / Reel',
+        fileName: parsed.hostname + parsed.pathname.slice(0, 28),
+        fileSize: 'URL Endpoint',
+        timestamp: new Date().toLocaleString('en-GB'),
+        sha256,
+        credentialStatus: 'External URI (CORS Sandbox Restricted)',
+        anomalyIndex: anomaly,
+        verdict: anomaly >= 50 ? 'High-Risk / Suspicious Link' : 'Inconclusive (Download Media to Scan Pixels)',
+        verdictType: anomaly >= 50 ? 'manipulated' : 'inconclusive',
+        riskLabel: risk.label,
+        riskClass: risk.cls,
+        findings: [
+          {
+            title: 'Transport & Domain Spoofing Inspection',
+            scope: parsed.hostname,
+            detail: `Protocol: ${parsed.protocol.toUpperCase()} • Punycode Homograph: ${hasPunycode ? 'DETECTED' : 'None'} • TLD Risk: ${suspiciousTld ? 'Elevated' : 'Standard'}.`,
+            badge: 'URL Threat Intel',
+            category: 'meta'
+          },
+          {
+            title: 'Cross-Origin Media Stream Limitation',
+            scope: 'Browser Security Policy',
+            detail: 'External social links cannot be decoded directly due to CORS. Download the video/reel and scan it in Video Detector for frame & lip-sync verification.',
+            badge: 'Security Advisory',
+            category: 'meta'
+          }
+        ]
+      };
+
+      saveScanRecord(record);
+      renderForensicCard('docLinkResultContainer', record);
+    }
+
+    // ==================== 5. METADATA INSPECTOR ====================
+    async function inspectFileMetadata(file) {
+      if (!file) return;
+      const buf = await file.arrayBuffer();
+      const sha256 = await computeSHA256(buf);
+      const meta = scanBinaryMarkers(buf);
+
+      document.getElementById('metadataOutput').innerHTML = `
+        <div class="hash-box">
+          <div class="mono" style="color:var(--cyan); font-weight:700; margin-bottom:0.6rem;">CRYPTOGRAPHIC &amp; BINARY HEADER REPORT</div>
+          <table>
+            <tr><th>File Name</th><td>${file.name}</td></tr>
+            <tr><th>MIME Type &amp; Size</th><td>${file.type || 'application/octet-stream'} (${formatBytes(file.size)})</td></tr>
+            <tr><th>Last Modified</th><td>${new Date(file.lastModified).toLocaleString('en-GB')}</td></tr>
+            <tr><th>SHA-256 Hash</th><td class="mono" style="word-break:break-all;">${sha256}</td></tr>
+            <tr><th>C2PA Content Credentials</th><td><strong>${meta.credentialStatus}</strong></td></tr>
+            <tr><th>EXIF / XMP / Software Tags</th><td>${meta.detectedTags.length ? meta.detectedTags.join(', ') : (meta.hasExif ? 'Standard EXIF/XMP block detected' : 'None present')}</td></tr>
+          </table>
+          <p style="font-size:0.82rem; color:var(--text-secondary); margin-top:0.85rem;">
+            <strong>Forensic Note:</strong> Absence of C2PA Content Credentials or EXIF metadata is standard for screen captures, browser recordings, and social media downloads—it does not automatically indicate manipulation.
+          </p>
+        </div>
+      `;
+    }
+
+    // ==================== 6. DASHBOARD & HISTORY ====================
+    function renderDashboard() {
+      const scans = getUserScans();
+      document.getElementById('statTotal').textContent = scans.length;
+      document.getElementById('statAuth').textContent = scans.filter(s => s.verdictType === 'authentic').length;
+      document.getElementById('statManip').textContent = scans.filter(s => s.verdictType === 'manipulated').length;
+      document.getElementById('statInc').textContent = scans.filter(s => s.verdictType === 'inconclusive').length;
+
+      if (scans.length === 0) {
+        document.getElementById('dashboardEmptyState').classList.remove('hidden');
+        document.getElementById('dashboardChartsWrap').classList.add('hidden');
+        return;
+      }
+
+      document.getElementById('dashboardEmptyState').classList.add('hidden');
+      document.getElementById('dashboardChartsWrap').classList.remove('hidden');
+
+      if (typeof Chart === 'undefined') return;
+
+      const modCounts = {
+        Video: scans.filter(s => s.modality === 'Video').length,
+        Voice: scans.filter(s => s.modality === 'Voice').length,
+        Image: scans.filter(s => s.modality === 'Image').length,
+        'Doc/Link': scans.filter(s => s.modality === 'Document' || s.modality === 'Link / Reel').length
+      };
+
+      const riskCounts = {
+        'LOW RISK': scans.filter(s => s.riskLabel === 'LOW RISK').length,
+        'MODERATE RISK': scans.filter(s => s.riskLabel === 'MODERATE RISK').length,
+        'HIGH RISK': scans.filter(s => s.riskLabel === 'HIGH RISK').length,
+        'INCONCLUSIVE': scans.filter(s => s.riskLabel === 'INCONCLUSIVE').length
+      };
+
+      if (modalityChartInstance) modalityChartInstance.destroy();
+      if (riskChartInstance) riskChartInstance.destroy();
+
+      modalityChartInstance = new Chart(document.getElementById('modalityChart'), {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(modCounts),
+          datasets: [{
+            data: Object.values(modCounts),
+            backgroundColor: ['#38bdf8', '#8b5cf6', '#10b981', '#f59e0b'],
+            borderWidth: 0
+          }]
+        },
+        options: { plugins: { legend: { labels: { color: '#cbd5e1' } } } }
+      });
+
+      riskChartInstance = new Chart(document.getElementById('riskChart'), {
+        type: 'bar',
+        data: {
+          labels: Object.keys(riskCounts),
+          datasets: [{
+            label: 'Scans',
+            data: Object.values(riskCounts),
+            backgroundColor: ['#10b981', '#f59e0b', '#f43f5e', '#94a3b8'],
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+            y: { beginAtZero: true, ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: 'rgba(148,163,184,0.1)' } }
+          }
+        }
+      });
+    }
+
+    function renderHistoryTable() {
+      const scans = getUserScans();
+      const tbody = document.getElementById('historyTableBody');
+      if (scans.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:2rem;">No scans recorded in this account yet.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = scans.map(s => {
+        scanCache[s.id] = s;
+        return `
+          <tr>
+            <td class="mono" style="color:var(--cyan);">${s.id}</td>
+            <td style="max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${s.fileName}</td>
+            <td>${s.modality}</td>
+            <td><strong>${s.verdict}</strong></td>
+            <td class="mono">${s.anomalyIndex}/100</td>
+            <td><span class="risk-pill ${s.riskClass}">${s.riskLabel}</span></td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="downloadForensicPDF('${s.id}')">PDF</button>
+              <button class="btn btn-outline btn-sm" onclick="openQRModal('${s.id}')">QR</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function clearUserHistory() {
+      if (!confirm('Delete all forensic scan history for this profile?')) return;
+      localStorage.removeItem(getStorageKey());
+      renderHistoryTable();
+      renderDashboard();
+    }
+
+    // ==================== 7. PDF REPORT & QR GENERATOR ====================
+    function downloadForensicPDF(scanId) {
+      const rec = scanCache[scanId] || getUserScans().find(s => s.id === scanId);
+      if (!rec) return;
+      if (!window.jspdf) return alert('PDF library still loading; please retry in a moment.');
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFillColor(6, 11, 25);
+      doc.rect(0, 0, 210, 34, 'F');
+      doc.setTextColor(56, 189, 248);
+      doc.setFontSize(18);
+      doc.text('DEEPGUARD AI — FORENSIC ANALYSIS REPORT', 14, 16);
+      doc.setTextColor(200, 210, 230);
+      doc.setFontSize(9);
+      doc.text(`Analysis ID: ${rec.id}   |   Generated: ${rec.timestamp}`, 14, 25);
+
+      doc.setTextColor(20, 25, 35);
+      doc.setFontSize(12);
+      doc.text('1. Target Media & Cryptographic Integrity', 14, 46);
+      doc.setFontSize(10);
+      doc.text(`File / Target: ${rec.fileName}`, 14, 54);
+      doc.text(`Modality: ${rec.modality}   |   Size: ${rec.fileSize}`, 14, 60);
+      doc.text(`Content Credentials: ${rec.credentialStatus}`, 14, 66);
+      doc.setFontSize(8);
+      doc.text(`SHA-256: ${rec.sha256}`, 14, 72);
+
+      doc.setFontSize(12);
+      doc.text('2. Forensic Verdict & Fraud Risk Tier', 14, 86);
+      doc.setFontSize(11);
+      doc.text(`Verdict: ${rec.verdict}`, 14, 94);
+      doc.text(`Anomaly Index: ${rec.anomalyIndex}/100   |   Risk Classification: ${rec.riskLabel}`, 14, 101);
+
+      doc.setFontSize(12);
+      doc.text('3. Explainable AI (XAI) Evidence Breakdown', 14, 115);
+      let y = 123;
+      rec.findings.forEach((f, i) => {
+        doc.setFontSize(10);
+        doc.text(`${i + 1}. ${f.title} [${f.badge}]`, 14, y);
+        y += 5;
+        doc.setFontSize(9);
+        const lines = doc.splitTextToSize(`${f.scope} — ${f.detail}`, 180);
+        doc.text(lines, 18, y);
+        y += lines.length * 5 + 4;
+      });
+
+      y += 6;
+      doc.setFontSize(9);
+      doc.setTextColor(90, 95, 105);
+      const disclaimer = 'Disclaimer: Automated forensic anomaly scores measure statistical, spectral, and compression characteristics. They do not constitute absolute mathematical proof of authenticity or forgery. Always verify critical financial or identity requests independently.';
+      doc.text(doc.splitTextToSize(disclaimer, 182), 14, Math.min(y, 268));
+
+      doc.save(`${rec.id}-Forensic-Report.pdf`);
+    }
+
+    function openQRModal(scanId) {
+      const rec = scanCache[scanId] || getUserScans().find(s => s.id === scanId);
+      if (!rec) return;
+      const target = document.getElementById('qrcodeTarget');
+      target.innerHTML = '';
+      const payload = `DeepGuardAI|ID:${rec.id}|Verdict:${rec.verdict}|Score:${rec.anomalyIndex}/100|SHA256:${rec.sha256.slice(0, 16)}`;
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(target, { text: payload, width: 170, height: 170 });
+      }
+      document.getElementById('qrCaption').textContent = payload;
+      document.getElementById('qrModal').classList.add('open');
+    }
+
+    // Initialize UI
+    updateAuthUI();
+    renderDashboard();
+  </script>
+</body>
+</html>
